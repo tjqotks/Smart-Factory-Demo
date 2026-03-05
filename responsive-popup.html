@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Responsive Popup</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --popup-base-size: 480px;
+            --popup-padding: clamp(1.5rem, 4vw, 2.5rem);
+            --border-radius: 24px;
+            --animation-duration: 0.6s;
+            --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* 배경 이미지 */
+        .background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-size: cover;
+            background-position: center;
+            z-index: 1;
+        }
+
+        /* Dim 레이어 */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            z-index: 2;
+            animation: fadeIn var(--animation-duration) var(--ease-out-expo);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        /* 팝업 컨테이너 */
+        .popup-container {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 3;
+            width: min(var(--popup-base-size), 90vw);
+            height: min(var(--popup-base-size), 90vh);
+            max-width: 90vw;
+            max-height: 90vh;
+            animation: popupSlideUp var(--animation-duration) var(--ease-out-expo);
+        }
+
+        @keyframes popupSlideUp {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -40%);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, -50%);
+            }
+        }
+
+        /* 팝업 */
+        .popup {
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px) saturate(180%);
+            border-radius: var(--border-radius);
+            box-shadow: 
+                0 30px 60px rgba(0, 0, 0, 0.3),
+                0 0 0 1px rgba(255, 255, 255, 0.5) inset;
+            padding: var(--popup-padding);
+            display: flex;
+            flex-direction: column;
+            gap: clamp(1rem, 3vw, 1.5rem);
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        /* 스크롤바 스타일링 */
+        .popup::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .popup::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 10px;
+        }
+
+        .popup::-webkit-scrollbar-thumb {
+            background: rgba(102, 126, 234, 0.5);
+            border-radius: 10px;
+        }
+
+        .popup::-webkit-scrollbar-thumb:hover {
+            background: rgba(102, 126, 234, 0.7);
+        }
+
+        /* 닫기 버튼 */
+        .close-button {
+            position: absolute;
+            top: clamp(0.75rem, 2vw, 1.25rem);
+            right: clamp(0.75rem, 2vw, 1.25rem);
+            width: 40px;
+            height: 40px;
+            border: none;
+            background: rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s var(--ease-out-expo);
+            z-index: 10;
+        }
+
+        .close-button:hover {
+            background: rgba(0, 0, 0, 0.2);
+            transform: rotate(90deg);
+        }
+
+        .close-button::before,
+        .close-button::after {
+            content: '';
+            position: absolute;
+            width: 18px;
+            height: 2px;
+            background: #333;
+            border-radius: 2px;
+        }
+
+        .close-button::before {
+            transform: rotate(45deg);
+        }
+
+        .close-button::after {
+            transform: rotate(-45deg);
+        }
+
+        /* 콘텐츠 섹션 */
+        .content-section {
+            display: flex;
+            flex-direction: column;
+            gap: clamp(0.75rem, 2vw, 1rem);
+            animation: contentSlideIn calc(var(--animation-duration) * 1.2) var(--ease-out-expo);
+            animation-fill-mode: both;
+        }
+
+        .content-section:nth-child(2) {
+            animation-delay: 0.1s;
+        }
+
+        .content-section:nth-child(3) {
+            animation-delay: 0.2s;
+        }
+
+        @keyframes contentSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* 이미지 영역 */
+        .image-container {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            border-radius: calc(var(--border-radius) * 0.6);
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .image-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.6s var(--ease-out-expo);
+        }
+
+        .image-container:hover img {
+            transform: scale(1.05);
+        }
+
+        /* 플레이스홀더 이미지 */
+        .image-placeholder {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: clamp(0.875rem, 2vw, 1rem);
+            font-weight: 300;
+            letter-spacing: 0.05em;
+        }
+
+        /* 타이틀 */
+        .title {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(1.5rem, 4vw, 2rem);
+            font-weight: 700;
+            color: #1a1a2e;
+            line-height: 1.2;
+            margin: 0;
+            letter-spacing: -0.02em;
+        }
+
+        /* 바디 텍스트 */
+        .body-text {
+            font-size: clamp(0.875rem, 2vw, 1rem);
+            line-height: 1.7;
+            color: #4a4a5e;
+            font-weight: 300;
+            margin: 0;
+        }
+
+        /* 구분선 */
+        .divider {
+            height: 1px;
+            background: linear-gradient(
+                to right,
+                transparent,
+                rgba(102, 126, 234, 0.3) 50%,
+                transparent
+            );
+            margin: clamp(0.5rem, 1.5vw, 1rem) 0;
+        }
+
+        /* 반응형 미디어 쿼리 */
+        @media (max-width: 768px) {
+            .popup-container {
+                width: 95vw;
+                height: auto;
+                max-height: 85vh;
+            }
+
+            .popup {
+                gap: 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            :root {
+                --popup-padding: 1.25rem;
+                --border-radius: 16px;
+            }
+
+            .title {
+                font-size: 1.25rem;
+            }
+
+            .body-text {
+                font-size: 0.875rem;
+            }
+
+            .close-button {
+                width: 36px;
+                height: 36px;
+            }
+        }
+
+        /* 가로 모드 대응 */
+        @media (max-height: 600px) and (orientation: landscape) {
+            .popup-container {
+                height: 95vh;
+                width: auto;
+                aspect-ratio: 1 / 1;
+            }
+
+            .image-container {
+                aspect-ratio: 2 / 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 배경 -->
+    <div class="background"></div>
+
+    <!-- Dim 레이어 -->
+    <div class="overlay"></div>
+
+    <!-- 팝업 -->
+    <div class="popup-container">
+        <div class="popup">
+            <!-- 닫기 버튼 -->
+            <button class="close-button" onclick="closePopup()" aria-label="닫기"></button>
+
+            <!-- 첫 번째 콘텐츠 섹션 -->
+            <div class="content-section">
+                <div class="image-container">
+                    <div class="image-placeholder">IMAGE 1</div>
+                    <!-- 실제 이미지 사용 시: <img src="your-image-1.jpg" alt="설명"> -->
+                </div>
+                
+                <h2 class="title">Discover Something Amazing</h2>
+                
+                <p class="body-text">
+                    우아한 디자인과 반응형 레이아웃이 완벽하게 조화를 이룹니다. 
+                    어떤 화면 크기에서도 아름다운 비율을 유지하며, 
+                    사용자에게 최상의 경험을 제공합니다.
+                </p>
+            </div>
+
+            <div class="divider"></div>
+
+            <!-- 두 번째 콘텐츠 섹션 -->
+            <div class="content-section">
+                <div class="image-container">
+                    <div class="image-placeholder">IMAGE 2</div>
+                    <!-- 실제 이미지 사용 시: <img src="your-image-2.jpg" alt="설명"> -->
+                </div>
+                
+                <h2 class="title">Experience Excellence</h2>
+                
+                <p class="body-text">
+                    글래스모피즘 효과와 부드러운 애니메이션이 만나 
+                    프리미엄 사용자 경험을 선사합니다. 모든 세부 사항이 
+                    세심하게 디자인되었습니다.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 팝업 닫기 함수
+        function closePopup() {
+            const popup = document.querySelector('.popup-container');
+            const overlay = document.querySelector('.overlay');
+            
+            popup.style.animation = 'popupSlideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards';
+            overlay.style.animation = 'fadeOut 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards';
+            
+            setTimeout(() => {
+                // 실제로는 팝업을 숨기거나 제거
+                document.body.style.display = 'none';
+            }, 400);
+        }
+
+        // 팝업 닫기 애니메이션
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes popupSlideDown {
+                to {
+                    opacity: 0;
+                    transform: translate(-50%, -40%);
+                }
+            }
+            
+            @keyframes fadeOut {
+                to {
+                    opacity: 0;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // ESC 키로 팝업 닫기
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closePopup();
+            }
+        });
+
+        // 오버레이 클릭으로 팝업 닫기
+        document.querySelector('.overlay').addEventListener('click', closePopup);
+
+        // 팝업 내부 클릭 시 이벤트 전파 중지
+        document.querySelector('.popup').addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+    </script>
+</body>
+</html>
